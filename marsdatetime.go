@@ -14,7 +14,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		err, _ := json.Marshal(errorResult("Expected argument DateTime not provided"))
+		err, _ := json.Marshal(errorResult("Expected argument DateTime not provided. Use as format 2019-12-27T15:22:22Z"))
 		fmt.Println(string(err))
 		os.Exit(1)
 	}

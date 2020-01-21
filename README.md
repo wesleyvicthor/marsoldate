@@ -3,7 +3,7 @@ Earth DateTime to Mars
 
 to execute the service run
 ```
-~$ marsmission 2019-12-27T15:22:22Z
+~$ ./marsmission 2019-12-27T15:22:22Z
 ```
 
 it expects a datetime [RFC3339](https://tools.ietf.org/html/rfc3339) format in order to compute a valid response.
