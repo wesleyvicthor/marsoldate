@@ -14,16 +14,16 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		err, _ := json.Marshal(errorResult("Expected argument DateTime not provided. Use as format 2019-12-27T15:22:22Z"))
+		err, _ := json.Marshal(&ResultError{"Expected argument DateTime not provided. Use as format 2019-12-27T15:22:22Z"})
 		fmt.Println(string(err))
 		os.Exit(1)
 	}
 
 	datetime := os.Args[1]
 
-	marsDate, resultError := EarthToMarsDate(datetime)
-	if resultError != nil {
-		err, _ := json.Marshal(resultError)
+	marsDate, err := EarthToMarsDate(datetime)
+	if err != nil {
+		err, _ := json.Marshal(err)
 		fmt.Println(string(err))
 		os.Exit(1)
 	}
@@ -32,15 +32,13 @@ func main() {
 	fmt.Println(string(result))
 }
 
-// MarsDate represent a date response format
-// Mars Sol Date
-// Cordinated Mars Time
+// MarsDate output response data
 type MarsDate struct {
 	MSD string `json:"msd"`
 	MTC string `json:"mtc"`
 }
 
-// ResultError represent a error message from the execution
+// ResultError error messages
 type ResultError struct {
 	Message string `json:"error"`
 }
@@ -50,7 +48,7 @@ type ResultError struct {
 // http://jtauber.github.io/mars-clock/
 func EarthToMarsDate(datetime string) (*MarsDate, *ResultError) {
 	if !strings.Contains(datetime, "T") {
-		return nil, errorResult("Invalid DateTime format provided. " + fmt.Sprintf("Use RFC3339 for DateTime format: %q", "2019-12-27T15:04:03"))
+		return nil, &ResultError{"Invalid DateTime format provided. " + fmt.Sprintf("Use RFC3339 for DateTime format: %q", "2019-12-27T15:04:03")}
 	}
 
 	if !strings.Contains(datetime, "Z") {
@@ -58,7 +56,7 @@ func EarthToMarsDate(datetime string) (*MarsDate, *ResultError) {
 	}
 	t, err := time.Parse(time.RFC3339, datetime)
 	if err != nil {
-		return nil, errorResult(err.Error())
+		return nil, &ResultError{err.Error()}
 	}
 
 	// A-1. Get a starting Earth time
@@ -70,7 +68,7 @@ func EarthToMarsDate(datetime string) (*MarsDate, *ResultError) {
 	tt, _ := strconv.ParseFloat(jdTt, 64)
 	j2000 := tt - 2451545.0
 	// C-2. Determine Coordinated Mars Time
-	msd := (((j2000 - 4.5) / 1.027491252) + 44796.0 - 0.00096)
+	msd := ((j2000 - 4.5) / 1.027491252) + 44796.0 - 0.00096
 	mtc := math.Mod(24*msd, 24)
 	// format mtc hours to standard hours:minutes:seconds
 	mtcH := mtc * 3600
@@ -79,18 +77,11 @@ func EarthToMarsDate(datetime string) (*MarsDate, *ResultError) {
 	mm := math.Floor(mtcHm / 60)
 	ss := math.Round(math.Mod(mtcHm, 60))
 
-	p := message.NewPrinter(message.MatchLanguage("en"))
+	printer := message.NewPrinter(message.MatchLanguage("en"))
 	marsDate := MarsDate{
-		MSD: p.Sprintf("%.5f", msd),
+		MSD: printer.Sprintf("%.5f", msd),
 		MTC: fmt.Sprintf("%02d:%02d:%02d", int(hh), int(mm), int(ss)),
 	}
 
 	return &marsDate, nil
-}
-
-func errorResult(msg string) *ResultError {
-	e := new(ResultError)
-	e.Message = msg
-
-	return e
 }
